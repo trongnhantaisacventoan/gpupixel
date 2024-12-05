@@ -17,6 +17,8 @@ std::map<std::string, std::function<std::shared_ptr<Filter>()>> initFilterFactor
     factory["FaceReshapeFilter"] = FaceReshapeFilter::create;
     factory["LipstickFilter"] = LipstickFilter::create;
     factory["BlusherFilter"] = BlusherFilter::create;
+    factory["GrayscaleFilter"] = GrayscaleFilter::create;
+
     return  factory;
 }
 std::map<std::string, std::function<std::shared_ptr<Filter>()>> Filter::_filterFactories = initFilterFactory();

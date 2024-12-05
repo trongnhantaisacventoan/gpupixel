@@ -19,6 +19,7 @@ import android.widget.Toast;
 import com.pixpark.GPUPixelApp.databinding.ActivityMainBinding;
 import com.pixpark.gpupixel.GPUPixel;
 import com.pixpark.gpupixel.filter.BeautyFaceFilter;
+import com.pixpark.gpupixel.filter.GrayscaleFilter;
 import com.pixpark.gpupixel.filter.FaceReshapeFilter;
 import com.pixpark.gpupixel.GPUPixelSourceCamera;
 import com.pixpark.gpupixel.GPUPixelView;
@@ -31,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private GPUPixelSourceCamera sourceCamera;
     private GPUPixelView surfaceView;
     private BeautyFaceFilter beautyFaceFilter;
+    private GrayscaleFilter grayscaleFilter;
     private FaceReshapeFilter faceReshapFilter;
     private LipstickFilter lipstickFilter;
     private SeekBar smooth_seekbar;
@@ -156,27 +158,42 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        grayscaleFilter.removeAllTargets();
+    }
+
     public void startCameraFilter() {
         // 美颜滤镜
         beautyFaceFilter = new BeautyFaceFilter();
         faceReshapFilter = new FaceReshapeFilter();
         lipstickFilter = new LipstickFilter();
+        grayscaleFilter = new GrayscaleFilter();
         // camera
         sourceCamera = new GPUPixelSourceCamera(this.getApplicationContext());
 
         //
-        sourceCamera.addTarget(lipstickFilter);
-        lipstickFilter.addTarget(faceReshapFilter);
-        faceReshapFilter.addTarget(beautyFaceFilter);
-        beautyFaceFilter.addTarget(surfaceView);
-
-        sourceCamera.setLandmarkCallbck(new GPUPixel.GPUPixelLandmarkCallback() {
+//        sourceCamera.addTarget(lipstickFilter);
+//        lipstickFilter.addTarget(faceReshapFilter);
+//        faceReshapFilter.addTarget(beautyFaceFilter);
+//        beautyFaceFilter.addTarget(surfaceView);
+        sourceCamera.addTarget(grayscaleFilter);
+        grayscaleFilter.addTargetCallback(new GPUPixel.RawOutputCallback() {
             @Override
-            public void onFaceLandmark(float[] landmarks) {
-                faceReshapFilter.setFaceLandmark(landmarks);
-                lipstickFilter.setFaceLandmark(landmarks);
+            public void onRawOutput(byte[] data, int width, int height, int ts) {
+                Log.v("DKM", data + "--"+ts);
             }
         });
+        grayscaleFilter.addTarget(surfaceView);
+
+//        sourceCamera.setLandmarkCallbck(new GPUPixel.GPUPixelLandmarkCallback() {
+//            @Override
+//            public void onFaceLandmark(float[] landmarks) {
+//                faceReshapFilter.setFaceLandmark(landmarks);
+//                lipstickFilter.setFaceLandmark(landmarks);
+//            }
+//        });
         // set default value
         beautyFaceFilter.setSmoothLevel(0.5f);
         beautyFaceFilter.setWhiteLevel(0.4f);

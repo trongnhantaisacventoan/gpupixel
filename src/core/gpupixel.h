@@ -46,6 +46,7 @@
 #include "lipstick_filter.h"
 #include "blusher_filter.h"
 #include "face_reshape_filter.h"
+#include "grayscale_filter.h"
 
 #include "box_blur_filter.h"
 #include "box_high_pass_filter.h"

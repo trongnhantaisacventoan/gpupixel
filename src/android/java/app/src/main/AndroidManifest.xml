@@ -12,6 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GPUPixel">
         <activity
+            android:hardwareAccelerated="true"
             android:name="com.pixpark.GPUPixelApp.MainActivity"
             android:exported="true">
             <intent-filter>

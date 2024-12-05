@@ -24,6 +24,15 @@ public abstract class GPUPixelSource {
         return addTarget(target, -1);
     }
 
+    public void addTargetCallback(final GPUPixel.RawOutputCallback callback) {
+        GPUPixel.getInstance().runOnDraw(new Runnable() {
+            @Override
+            public void run() {
+                GPUPixel.nativeSourceAddTargetOutputCallback(mNativeClassID, callback);
+            }
+        });
+    }
+
     public final GPUPixelSource addTarget(final GPUPixelTarget target, final int texID) {
         GPUPixel.getInstance().runOnDraw(new Runnable() {
             @Override
