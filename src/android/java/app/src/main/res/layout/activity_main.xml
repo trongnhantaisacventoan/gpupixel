@@ -117,4 +117,11 @@
         android:max="10"
         android:progress="0" />
 
+    <Button
+        android:id="@+id/bt_start"
+        android:text="Start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+    </Button>
+
 </RelativeLayout>

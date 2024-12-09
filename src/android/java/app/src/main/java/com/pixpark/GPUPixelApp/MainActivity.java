@@ -10,9 +10,12 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceHolder;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
@@ -24,6 +27,9 @@ import com.pixpark.gpupixel.filter.FaceReshapeFilter;
 import com.pixpark.gpupixel.GPUPixelSourceCamera;
 import com.pixpark.gpupixel.GPUPixelView;
 import com.pixpark.gpupixel.filter.LipstickFilter;
+
+import java.io.File;
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
@@ -41,8 +47,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private SeekBar big_eye_seekbar;
     private SeekBar lipstick_seekbar;
 
+    private Button btStart;
     private ActivityMainBinding binding;
 
+
+    private VideoRecorder videoRecorder;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +70,29 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         // preview
         surfaceView = binding.surfaceView;
         surfaceView.setMirror(true);
+
+        btStart = binding.btStart;
+        btStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(btStart.getText().toString().equals("Start")){
+                    File file = new File(getExternalFilesDir(null), "Demo.mp4");
+                    try {
+                        videoRecorder = new VideoRecorder(file.getAbsolutePath(), false);
+                        grayscaleFilter.addTargetCallback(videoRecorder);
+                        btStart.setText("Stop");
+                    }catch (IOException ex){
+                        ex.printStackTrace();
+                    }
+                }else{
+                    btStart.setText("Start");
+                    if(videoRecorder != null){
+                        videoRecorder.release();
+                        videoRecorder = null;
+                    }
+                }
+            }
+        });
 
         smooth_seekbar = binding.smoothSeekbar;
         smooth_seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -179,12 +211,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 //        faceReshapFilter.addTarget(beautyFaceFilter);
 //        beautyFaceFilter.addTarget(surfaceView);
         sourceCamera.addTarget(grayscaleFilter);
-        grayscaleFilter.addTargetCallback(new GPUPixel.RawOutputCallback() {
-            @Override
-            public void onRawOutput(byte[] data, int width, int height, int ts) {
-                Log.v("DKM", data + "--"+ts);
-            }
-        });
         grayscaleFilter.addTarget(surfaceView);
 
 //        sourceCamera.setLandmarkCallbck(new GPUPixel.GPUPixelLandmarkCallback() {
