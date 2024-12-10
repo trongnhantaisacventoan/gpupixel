@@ -132,7 +132,7 @@ public class GPUPixelSourceCamera extends GPUPixelSource implements Camera.Previ
                 Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
         }
-        parameters.setPreviewSize(1280, 720);
+        parameters.setPreviewSize(640, 480);
         parameters.setPreviewFormat(ImageFormat.NV21);
         mCamera.setParameters(parameters);
 

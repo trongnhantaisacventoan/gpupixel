@@ -78,10 +78,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 if(btStart.getText().toString().equals("Start")){
                     File file = new File(getExternalFilesDir(null), "Demo.mp4");
                     try {
-                        videoRecorder = new VideoRecorder(file.getAbsolutePath(), false);
-                        grayscaleFilter.addTargetCallback(videoRecorder);
+                        videoRecorder = new VideoRecorder(file.getAbsolutePath(), true);
+                        beautyFaceFilter.addTargetCallback(videoRecorder);
                         btStart.setText("Stop");
-                    }catch (IOException ex){
+                    }catch (Exception ex){
                         ex.printStackTrace();
                     }
                 }else{
@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        grayscaleFilter.removeAllTargets();
+        beautyFaceFilter.removeAllTargets();
     }
 
     public void startCameraFilter() {
@@ -201,25 +201,25 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         beautyFaceFilter = new BeautyFaceFilter();
         faceReshapFilter = new FaceReshapeFilter();
         lipstickFilter = new LipstickFilter();
-        grayscaleFilter = new GrayscaleFilter();
+//        grayscaleFilter = new GrayscaleFilter();
         // camera
         sourceCamera = new GPUPixelSourceCamera(this.getApplicationContext());
 
         //
-//        sourceCamera.addTarget(lipstickFilter);
-//        lipstickFilter.addTarget(faceReshapFilter);
-//        faceReshapFilter.addTarget(beautyFaceFilter);
-//        beautyFaceFilter.addTarget(surfaceView);
-        sourceCamera.addTarget(grayscaleFilter);
-        grayscaleFilter.addTarget(surfaceView);
+        sourceCamera.addTarget(lipstickFilter);
+        lipstickFilter.addTarget(faceReshapFilter);
+        faceReshapFilter.addTarget(beautyFaceFilter);
+        beautyFaceFilter.addTarget(surfaceView);
+//        sourceCamera.addTarget(grayscaleFilter);
+//        grayscaleFilter.addTarget(surfaceView);
 
-//        sourceCamera.setLandmarkCallbck(new GPUPixel.GPUPixelLandmarkCallback() {
-//            @Override
-//            public void onFaceLandmark(float[] landmarks) {
-//                faceReshapFilter.setFaceLandmark(landmarks);
-//                lipstickFilter.setFaceLandmark(landmarks);
-//            }
-//        });
+        sourceCamera.setLandmarkCallbck(new GPUPixel.GPUPixelLandmarkCallback() {
+            @Override
+            public void onFaceLandmark(float[] landmarks) {
+                faceReshapFilter.setFaceLandmark(landmarks);
+                lipstickFilter.setFaceLandmark(landmarks);
+            }
+        });
         // set default value
         beautyFaceFilter.setSmoothLevel(0.5f);
         beautyFaceFilter.setWhiteLevel(0.4f);
@@ -227,9 +227,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     public void checkCameraPermission() {
         // 检查相机权限是否已授予
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             // 如果未授予相机权限，向用户请求权限
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, CAMERA_PERMISSION_REQUEST_CODE);
         } else {
             startCameraFilter();
         }
@@ -239,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.length > 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                 startCameraFilter();
             } else {
                 Toast.makeText(this, "No Camera permission!", LENGTH_LONG);

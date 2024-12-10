@@ -224,29 +224,46 @@ extern "C" jlong Java_com_pixpark_gpupixel_GPUPixel_nativeSourceAddTargetOutputC
 
     std::shared_ptr<TargetRawDataOutput> output = TargetRawDataOutput::create();
 
-    JavaVM* jvm;
-    env->GetJavaVM(&jvm);
+   JavaVM* jvm;
+   env->GetJavaVM(&jvm);
 
-    output->setPixelsCallbck([=](const uint8_t* data, int width, int height, int64_t ts) {
-        size_t frame_size = width * height * 4;
+   output->setPixelsCallbck([=](const uint8_t* data, int width, int height, int64_t ts) {
+       size_t frame_size = width * height * 4;
 
-        JNIEnv* myNewEnv;
-        JavaVMAttachArgs args;
-        args.version = JNI_VERSION_1_6; // choose your JNI version
-        args.name = NULL; // you might want to give the java thread a name
-        args.group = NULL; // you might want to assign the java thread to a ThreadGroup
-        jvm->AttachCurrentThread(reinterpret_cast<JNIEnv **>((void **) &myNewEnv), &args);
+       JNIEnv* myNewEnv;
+       JavaVMAttachArgs args;
+       args.version = JNI_VERSION_1_6; // choose your JNI version
+       args.name = NULL; // you might want to give the java thread a name
+       args.group = NULL; // you might want to assign the java thread to a ThreadGroup
+       jvm->AttachCurrentThread(reinterpret_cast<JNIEnv **>((void **) &myNewEnv), &args);
 
-        jbyte* by = (jbyte*)data;
+       jbyte* by = (jbyte*)data;
 
-        jbyteArray yArray = myNewEnv->NewByteArray(frame_size);
+       jbyteArray yArray = myNewEnv->NewByteArray(frame_size);
 
-        myNewEnv->SetByteArrayRegion(yArray, 0, frame_size, by);
+       myNewEnv->SetByteArrayRegion(yArray, 0, frame_size, by);
 
-        myNewEnv->CallVoidMethod(globalSourceRef, mid, yArray, width, height, ts);
+       myNewEnv->CallVoidMethod(globalSourceRef, mid, yArray, width, height, ts);
 
-        myNewEnv->DeleteLocalRef(yArray);
-    });
+       myNewEnv->DeleteLocalRef(yArray);
+   });
+
+
+
+    // output->setPixelsCallbck([=](const uint8_t* data, int width, int height, int64_t ts) {
+    //     size_t frame_size = width * height * 4;
+
+    //     jbyte* by = (jbyte*)data;
+
+    //     jbyteArray yArray = env->NewByteArray(frame_size);
+
+    //     env->SetByteArrayRegion(yArray, 0, frame_size, by);
+
+    //     env->CallVoidMethod(globalSourceRef, mid, yArray, width, height, ts);
+
+    //     env->DeleteLocalRef(yArray);
+    // });
+
     target = output;
 
     return (uintptr_t)(source->addTarget(target)).get();

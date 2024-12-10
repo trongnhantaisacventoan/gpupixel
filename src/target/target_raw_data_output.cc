@@ -327,11 +327,11 @@ void TargetRawDataOutput::readPixelsWithPBO(int width, int height) {
                   GL_PIXEL_PACK_BUFFER, 0, width * height * 4, GL_MAP_READ_BIT);
 #endif
   if (ptr) {
-       libyuv::ABGRToI420(ptr, width * 4, _yuvFrameBuffer, _width,
+    if (i420_callback_) {
+      libyuv::ABGRToI420(ptr, width * 4, _yuvFrameBuffer, _width,
                           _yuvFrameBuffer + _width * _height, _width / 2,
                           _yuvFrameBuffer + _width * _height * 5 / 4, _width
                           / 2, _width, _height);
-    if (i420_callback_) {
       i420_callback_(_yuvFrameBuffer, _width, _height, _frame_ts);
     }
 
