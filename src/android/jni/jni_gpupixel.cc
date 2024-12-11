@@ -17,6 +17,7 @@
 
 USING_NS_GPUPIXEL
 std::list<std::shared_ptr<Filter>>  filter_list_;
+std::list<std::shared_ptr<TargetRawDataOutput>>  rawData_list_;
 
 extern "C" jlong Java_com_pixpark_gpupixel_GPUPixel_nativeSourceImageNew(
     JNIEnv* env,
@@ -205,6 +206,15 @@ extern "C" jlong Java_com_pixpark_gpupixel_GPUPixel_nativeSourceAddTarget(
     }
 };
 
+
+extern "C" jlong Java_com_pixpark_gpupixel_GPUPixel_nativeTargetDataOutputNew(JNIEnv* env,
+                                                                          jclass){
+    std::shared_ptr<TargetRawDataOutput> output = TargetRawDataOutput::create();
+    rawData_list_.push_back(output);
+    auto ret = (jlong)output.get();
+    return ret;
+}
+
 extern "C" jlong Java_com_pixpark_gpupixel_GPUPixel_nativeSourceAddTargetOutputCallback(
         JNIEnv* env,
         jclass,
@@ -224,10 +234,56 @@ extern "C" jlong Java_com_pixpark_gpupixel_GPUPixel_nativeSourceAddTargetOutputC
 
     std::shared_ptr<TargetRawDataOutput> output = TargetRawDataOutput::create();
 
+    JavaVM* jvm;
+    env->GetJavaVM(&jvm);
+
+    output->setPixelsCallbck([=](const uint8_t* data, int width, int height, int64_t ts) {
+        size_t frame_size = width * height * 4;
+
+        JNIEnv* myNewEnv;
+        JavaVMAttachArgs args;
+        args.version = JNI_VERSION_1_6; // choose your JNI version
+        args.name = NULL; // you might want to give the java thread a name
+        args.group = NULL; // you might want to assign the java thread to a ThreadGroup
+        jvm->AttachCurrentThread(reinterpret_cast<JNIEnv **>((void **) &myNewEnv), &args);
+
+        jbyte* by = (jbyte*)data;
+
+        jbyteArray yArray = myNewEnv->NewByteArray(frame_size);
+
+        myNewEnv->SetByteArrayRegion(yArray, 0, frame_size, by);
+
+        myNewEnv->CallVoidMethod(globalSourceRef, mid, yArray, width, height, ts);
+
+        myNewEnv->DeleteLocalRef(yArray);
+    });
+
+    target = output;
+    return (uintptr_t)(source->addTarget(target)).get();
+};
+
+extern "C" jlong Java_com_pixpark_gpupixel_GPUPixel_nativeSourceAddTargetOutputCallbackWithTargetId(
+        JNIEnv* env,
+        jclass,
+        jlong classId,
+        jlong  classTargetId,
+        jobject src) {
+
+    jobject globalSourceRef = env->NewGlobalRef(src);
+
+    jclass cls = env->GetObjectClass(globalSourceRef);
+    jmethodID mid = env->GetMethodID(cls, "onRawOutput", "([BIII)V");
+
+    if (!mid) return 0;
+
+    Source* source = (Source*)classId;
+
+    std::shared_ptr<TargetRawDataOutput> target = std::shared_ptr<TargetRawDataOutput>((TargetRawDataOutput*)classTargetId);
+
    JavaVM* jvm;
    env->GetJavaVM(&jvm);
 
-   output->setPixelsCallbck([=](const uint8_t* data, int width, int height, int64_t ts) {
+    target->setPixelsCallbck([=](const uint8_t* data, int width, int height, int64_t ts) {
        size_t frame_size = width * height * 4;
 
        JNIEnv* myNewEnv;
@@ -247,25 +303,6 @@ extern "C" jlong Java_com_pixpark_gpupixel_GPUPixel_nativeSourceAddTargetOutputC
 
        myNewEnv->DeleteLocalRef(yArray);
    });
-
-
-
-    // output->setPixelsCallbck([=](const uint8_t* data, int width, int height, int64_t ts) {
-    //     size_t frame_size = width * height * 4;
-
-    //     jbyte* by = (jbyte*)data;
-
-    //     jbyteArray yArray = env->NewByteArray(frame_size);
-
-    //     env->SetByteArrayRegion(yArray, 0, frame_size, by);
-
-    //     env->CallVoidMethod(globalSourceRef, mid, yArray, width, height, ts);
-
-    //     env->DeleteLocalRef(yArray);
-    // });
-
-    target = output;
-
     return (uintptr_t)(source->addTarget(target)).get();
 };
 
@@ -405,6 +442,24 @@ extern "C" void Java_com_pixpark_gpupixel_GPUPixel_nativeFilterFinalize(
     jclass obj,
     jlong classId) {
   ((Filter*)classId)->releaseFramebuffer(false);
+};
+
+extern "C" void Java_com_pixpark_gpupixel_GPUPixel_nativeTargetRawDataDestroy(
+        JNIEnv* env,
+        jclass obj,
+        jlong classId){
+    for(auto ft : rawData_list_) {
+        if(classId == (jlong)ft.get()){
+            rawData_list_.remove(ft);
+        }
+    }
+};
+
+extern "C" void Java_com_pixpark_gpupixel_GPUPixel_nativeTargetRawDataFinalize(
+        JNIEnv* env,
+        jclass obj,
+        jlong classId) {
+
 };
 
 extern "C" void Java_com_pixpark_gpupixel_GPUPixel_nativeFilterSetPropertyFloat(

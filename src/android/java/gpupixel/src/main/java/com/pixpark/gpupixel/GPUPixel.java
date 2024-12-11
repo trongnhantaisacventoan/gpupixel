@@ -235,20 +235,29 @@ public class GPUPixel {
 
     // SourceRawDataInput
     public static native long nativeSourceRawInputNew();
+    public static native void nativeTargetRawDataDestroy(long classID);
+    public static native void nativeTargetRawDataFinalize(long classID);
+
     public static native void nativeSourceRawInputUploadBytes(final long classID, final int[] pixel, final int width, final int height, final int stride);
     public static native void nativeSourceRawInputUploadBufferBytes(final long classID, final ByteBuffer pixel, final int width, final int height, final int stride);
     public static native void nativeSourceRawInputSetRotation(final long classID, final int rotation);
 
+    public static native long nativeTargetDataOutputNew();
     // Source
     public static native long nativeSourceAddFilter(final long targetClassId);
     public static native long nativeSourceAddTarget(final long classID, final long targetClassID, final int texID, final boolean isFilter);
     public static native long nativeSourceAddTargetOutputCallback(final long classId, final RawOutputCallback callback);
+    public static native long nativeSourceAddTargetOutputCallbackWithTargetId(final long classId,final long targetClassId, final RawOutputCallback callback);
+
+
     public static native void nativeSourceRemoveTarget(final long classID, final long targetClassID, final boolean isFilter);
     public static native void nativeSourceRemoveAllTargets(final long classID);
     public static native boolean nativeSourceProceed(final long classID, final boolean bUpdateTargets);
     public static native int nativeSourceGetRotatedFramebuferWidth(final long classID);
     public static native int nativeSourceGetRotatedFramebuferHeight(final long classID);
     public static native byte[] nativeSourceCaptureAProcessedFrameData(final long classId, final long upToFilterClassId, final int width, final int height);
+
+
 
     // view
     public static native long nativeTargetViewNew();

@@ -59,6 +59,7 @@ public class VideoRecorder implements GPUPixel.RawOutputCallback {
 
     @SuppressLint("MissingPermission")
     VideoRecorder(String outputFile, boolean withAudio) throws IOException {
+        super();
         this.enableAudio = withAudio;
         renderThread = new HandlerThread(TAG + "RenderThread");
         renderThread.start();
@@ -89,8 +90,11 @@ public class VideoRecorder implements GPUPixel.RawOutputCallback {
 
     @Override
     public void onRawOutput(byte[] data, int width, int height, int ts) {
-        if (!isRunning)
+        if (!isRunning){
+            Log.v("DKM", "STILL GO");
             return;
+        }
+
 
         renderThreadHandler.post(() -> {
             if (videoEncoder == null) try {
@@ -99,7 +103,7 @@ public class VideoRecorder implements GPUPixel.RawOutputCallback {
                 // configure() call to throw an unhelpful exception.
                 format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
                         MediaCodecInfo.CodecCapabilities.COLOR_Format32bitARGB8888);
-                format.setInteger(MediaFormat.KEY_BIT_RATE, 6000000);
+                format.setInteger(MediaFormat.KEY_BIT_RATE, 1000000);
                 format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
                 format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
                 videoEncoder = MediaCodec.createEncoderByType(MIME_TYPE);
@@ -125,9 +129,7 @@ public class VideoRecorder implements GPUPixel.RawOutputCallback {
         });
 
         if(!isAudioRunning && enableAudio){
-            audioThreadHandler.post(()->{
-                encodeAudio();
-            });
+            audioThreadHandler.post(this::encodeAudio);
             isAudioRunning = true;
         }
     }
@@ -167,6 +169,9 @@ public class VideoRecorder implements GPUPixel.RawOutputCallback {
                     // It's usually necessary to adjust the ByteBuffer values to match BufferInfo.
                     encodedData.position(videoBufferInfo.offset);
                     encodedData.limit(videoBufferInfo.offset + videoBufferInfo.size);
+                    if(!isRunning){
+                        break;
+                    }
                     if (muxerStarted)
                         mediaMuxer.writeSampleData(videoTrackIndex, encodedData, videoBufferInfo);
                     isRunning = isRunning && (videoBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) == 0;
@@ -202,6 +207,7 @@ public class VideoRecorder implements GPUPixel.RawOutputCallback {
                 if (videoTrackIndex != -1 && !muxerStarted) {
                     mediaMuxer.start();
                     muxerStarted = true;
+                    break;
                 }
                 if (!muxerStarted)
                     break;
@@ -217,6 +223,9 @@ public class VideoRecorder implements GPUPixel.RawOutputCallback {
                     // It's usually necessary to adjust the ByteBuffer values to match BufferInfo.
                     encodedData.position(audioBufferInfo.offset);
                     encodedData.limit(audioBufferInfo.offset + audioBufferInfo.size);
+                    if(!isRunning){
+                        break;
+                    }
                     if (muxerStarted)
                         mediaMuxer.writeSampleData(audioTrackIndex, encodedData, audioBufferInfo);
                     isRunning = isRunning && (audioBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) == 0;
@@ -277,6 +286,7 @@ public class VideoRecorder implements GPUPixel.RawOutputCallback {
                     audioEncoder.release();
                 }
                 audioThread.quit();
+
             });
         renderThreadHandler.post(() -> {
             if (videoEncoder != null) {

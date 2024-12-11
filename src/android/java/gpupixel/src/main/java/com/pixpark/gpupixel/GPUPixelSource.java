@@ -20,6 +20,13 @@ public abstract class GPUPixelSource {
         return mNativeClassID;
     }
 
+    protected long mNativeClassIDTargetOutput = 0;
+
+    public long getNativeClassIDTargetOutput() {
+        return mNativeClassIDTargetOutput;
+    }
+
+
     public GPUPixelSource addTarget(GPUPixelTarget target) {
         return addTarget(target, -1);
     }
@@ -28,7 +35,16 @@ public abstract class GPUPixelSource {
         GPUPixel.getInstance().runOnDraw(new Runnable() {
             @Override
             public void run() {
-                GPUPixel.nativeSourceAddTargetOutputCallback(mNativeClassID, callback);
+                mNativeClassIDTargetOutput = GPUPixel.nativeSourceAddTargetOutputCallback(mNativeClassID, callback);
+            }
+        });
+    }
+
+    public void addTargetCallback(final GPUPixelRawDataTarget target, final GPUPixel.RawOutputCallback callback) {
+        GPUPixel.getInstance().runOnDraw(new Runnable() {
+            @Override
+            public void run() {
+                mNativeClassIDTargetOutput = GPUPixel.nativeSourceAddTargetOutputCallbackWithTargetId(mNativeClassID,target.getNativeClassID(), callback);
             }
         });
     }
@@ -48,17 +64,17 @@ public abstract class GPUPixelSource {
     }
 
     public final void removeTarget(final GPUPixelTarget target) {
-        GPUPixel.getInstance().runOnDraw(new Runnable() {
-            @Override
-            public void run() {
+//        GPUPixel.getInstance().runOnDraw(new Runnable() {
+//            @Override
+//            public void run() {
                 if (mNativeClassID != 0 && target.getNativeClassID() != 0)
                     GPUPixel.nativeSourceRemoveTarget(mNativeClassID, target.getNativeClassID(), target instanceof GPUPixelFilter);
-            }
-        });
+//            }
+//        });
     }
 
     public final void removeAllTargets() {
-        GPUPixel.getInstance().runOnDraw(new Runnable() {
+        GPUPixel.getInstance().runOnPostDraw(new Runnable() {
             @Override
             public void run() {
                 if (mNativeClassID != 0)

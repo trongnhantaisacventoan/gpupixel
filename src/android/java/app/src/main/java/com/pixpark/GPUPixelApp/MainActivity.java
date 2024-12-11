@@ -11,6 +11,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.View;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 
 import com.pixpark.GPUPixelApp.databinding.ActivityMainBinding;
 import com.pixpark.gpupixel.GPUPixel;
+import com.pixpark.gpupixel.GPUPixelRawDataTarget;
 import com.pixpark.gpupixel.filter.BeautyFaceFilter;
 import com.pixpark.gpupixel.filter.GrayscaleFilter;
 import com.pixpark.gpupixel.filter.FaceReshapeFilter;
@@ -52,6 +54,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
 
     private VideoRecorder videoRecorder;
+    private GPUPixelRawDataTarget rawDataTarget;
+
+    private Handler handler = new Handler();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,8 +83,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 if(btStart.getText().toString().equals("Start")){
                     File file = new File(getExternalFilesDir(null), "Demo.mp4");
                     try {
+                        rawDataTarget= new GPUPixelRawDataTarget();
                         videoRecorder = new VideoRecorder(file.getAbsolutePath(), true);
-                        beautyFaceFilter.addTargetCallback(videoRecorder);
+                        beautyFaceFilter.addTargetCallback(rawDataTarget, videoRecorder);
                         btStart.setText("Stop");
                     }catch (Exception ex){
                         ex.printStackTrace();
@@ -90,6 +96,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                         videoRecorder.release();
                         videoRecorder = null;
                     }
+
+                    beautyFaceFilter.removeTarget(rawDataTarget);
                 }
             }
         });
@@ -193,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        beautyFaceFilter.removeAllTargets();
+        GPUPixel.getInstance().destroy();
     }
 
     public void startCameraFilter() {
